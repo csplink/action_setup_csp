@@ -1,0 +1,15 @@
+name: 'Setup CSP'
+description: 'Set up your GitHub Actions workflow with a specific version of csp'
+branding:
+  icon: 'play'
+  color: 'green'
+inputs:
+  version:
+    description: 'The version to use'
+    default: latest
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.version }}

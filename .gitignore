@@ -1,0 +1,9 @@
+#vscode
+.vscode/
+
+# clion, pycharm
+.idea
+
+build/
+
+__pycache__/
