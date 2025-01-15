@@ -4,6 +4,9 @@
 # clion, pycharm
 .idea
 
+# nodejs
+node_modules
+
 build/
 
 __pycache__/

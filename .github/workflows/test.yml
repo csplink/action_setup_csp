@@ -13,19 +13,42 @@
 # Copyright (C) 2025-2025 xqyjlj<xqyjlj@126.com>
 #
 # @author      xqyjlj
-# @file        Dockerfile
+# @file        test.yml
 #
 # Change Logs:
 # Date           Author       Notes
 # ------------   ----------   -----------------------------------------------
-# 2025-01-14     xqyjlj       initial version
+# 2025-01-15     xqyjlj       initial version
 #
 
-FROM ubuntu:22.04
+name: 🧪 test
 
-RUN apt-get update
-RUN apt-get install -y git openssh-client python3 python3-pip
+on:
+  push:
 
-ADD *.py /
+jobs:
+  test-ubuntu:
+    name: 🧪 test ubuntu
+    runs-on: ubuntu-latest
+    env:
+      QT_ASSUME_STDERR_HAS_CONSOLE: 1
+      QT_QPA_PLATFORM: "offscreen"
+    steps:
+      - name: ⬇️ init env packages
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install libegl1-mesa-dev libegl1
+      - name: 🧪 test ubuntu self
+        uses: csplink/action_setup_csp@test
+        with:
+          version: latest
 
-ENTRYPOINT ["python3", "/run.py"]
+  test-windows:
+    name: 🧪 test windows
+    runs-on: windows-latest
+    steps:
+      - name: 🧪 test windows self
+        uses: csplink/action_setup_csp@test
+        with:
+          version: latest

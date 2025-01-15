@@ -9,7 +9,5 @@ inputs:
     default: latest
     required: true
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  args:
-    - ${{ inputs.version }}
+  using: 'node20'
+  main: 'dist/index.js'
