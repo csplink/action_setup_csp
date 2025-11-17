@@ -26,83 +26,104 @@
  *  ------------   ----------   -----------------------------------------------
  *  2025-01-16     xqyjlj       initial version
  */
-const core = require('@actions/core');
-const github = require('@actions/github');
-const tc = require('@actions/tool-cache');
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const {exec} = require('@actions/exec');
+
+const fs = require('node:fs')
+const https = require('node:https')
+const os = require('node:os')
+const path = require('node:path')
+const core = require('@actions/core')
+const { exec } = require('@actions/exec')
+// const github = require('@actions/github')
+const tc = require('@actions/tool-cache')
 
 const version = core.getInput('version') || 'latest'
 
 function getPlatform() {
-    const platform = os.platform();
-    if (platform === 'win32') {
-        return 'windows';
-    } else if (platform === 'linux') {
-        return 'ubuntu';
-    } else {
-        throw new Error(`Unsupported platform: ${platform}`);
-    }
+  const platform = os.platform()
+  if (platform === 'win32') {
+    return 'windows'
+  }
+  else if (platform === 'linux') {
+    return 'ubuntu'
+  }
+  else {
+    throw new Error(`Unsupported platform: ${platform}`)
+  }
 }
 
 async function getTag() {
-    if (version === 'latest') {
-        const url = 'https://api.github.com/repos/csplink/csp/tags';
-        const options = {
-            headers: {
-                'User-Agent': 'Node.js', Accept: 'application/vnd.github.v3+json',
-            },
-        };
+  if (version !== 'latest') {
+    return version
+  }
 
-        return new Promise((resolve, reject) => {
-            https.get(url, options, (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`Failed to fetch tags: ${res.statusCode}`));
-                }
+  const url = 'https://api.github.com/repos/csplink/csp/releases/latest'
 
-                let data = '';
-                res.on('data', (chunk) => (data += chunk));
-                res.on('end', () => {
-                    const tags = JSON.parse(data);
-                    if (tags.length > 0) {
-                        resolve(tags[0].name);
-                    } else {
-                        reject(new Error('No tags found.'));
-                    }
-                });
-            }).on('error', (err) => reject(err));
-        });
-    } else {
-        return version;
-    }
+  const options = {
+    headers: {
+      'User-Agent': 'github-action',
+      'Accept': 'application/vnd.github.v3+json',
+    },
+    timeout: 10000,
+  }
+
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, options, (res) => {
+      if (res.statusCode !== 200) {
+        return reject(new Error(`Failed: ${res.statusCode}`))
+      }
+
+      let data = ''
+      res.on('data', chunk => (data += chunk))
+
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data)
+          if (json.tag_name) {
+            resolve(json.tag_name)
+          }
+          else {
+            reject(new Error('No tag_name in latest release.'))
+          }
+        }
+        catch {
+          reject(new Error('Invalid JSON from GitHub'))
+        }
+      })
+    })
+
+    req.on('error', reject)
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error('Request timed out'))
+    })
+  })
 }
 
 async function main() {
-    try {
-        const platform = getPlatform();
-        const tag = await getTag();
-        const fileName = platform === 'windows' ? `csp-windows-${tag}.zip` : `csp-ubuntu-${tag}.tar.gz`;
+  try {
+    const platform = getPlatform()
+    const tag = await getTag()
+    const fileName = platform === 'windows' ? `csp-windows-server-${tag}.exe` : `csp-linux-server-${tag}`
+    const targetName = platform === 'windows' ? 'csp-server.exe' : 'csp-server'
 
-        const url = `https://github.com/csplink/csp/releases/download/${tag}/${fileName}`;
-        const file = await tc.downloadTool(url)
-        let folder = ''
-        if (platform === "windows") {
-            folder = await tc.extractZip(file);
-        } else {
-            folder = await tc.extractTar(file);
-        }
-        const dirs = fs.readdirSync(folder);
-        folder = path.join(folder, dirs[0])
-        await exec(`"${folder}/csp" --version`)
-        core.addPath(folder);
-        await exec('csp', ['--version'])
-    } catch (error) {
-        core.error(`Error: ${error.message}`);
-        process.exit(1);
+    const url = `https://github.com/csplink/csp/releases/download/${tag}/${fileName}`
+    const downloadedPath = await tc.downloadTool(url)
+    const folder = path.dirname(downloadedPath)
+    const targetPath = path.join(folder, targetName)
+    fs.renameSync(downloadedPath, targetPath)
+
+    if (platform !== 'windows') {
+      fs.chmodSync(targetPath, 0o755)
     }
+
+    await exec(`${folder}/csp-server`, ['--version'])
+    core.addPath(folder)
+    await exec('csp-server', ['--version'])
+  }
+  catch (error) {
+    core.error(`Error: ${error.message}`)
+    process.exit(1)
+  }
 }
 
-main().then();
+main().then()
