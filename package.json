@@ -15,5 +15,10 @@
     "@actions/github": "^6.0.0",
     "@actions/tool-cache": "^2.0.1",
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^6.2.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-format": "^1.0.2"
   }
 }
