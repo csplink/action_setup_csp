@@ -30,19 +30,20 @@ jobs:
   test-ubuntu:
     name: 🧪 test ubuntu
     runs-on: ubuntu-latest
-    env:
-      QT_ASSUME_STDERR_HAS_CONSOLE: 1
-      QT_QPA_PLATFORM: "offscreen"
     steps:
-      - name: ⬇️ init env packages
-        shell: bash
-        run: |
-          sudo apt update
-          sudo apt install libegl1-mesa-dev libegl1
       - name: 🧪 test ubuntu self
         uses: csplink/action_setup_csp@test
         with:
           version: latest
+
+  test-ubuntu-version:
+    name: 🧪 test ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧪 test ubuntu self
+        uses: csplink/action_setup_csp@test
+        with:
+          version: v0.1.0
 
   test-windows:
     name: 🧪 test windows
