@@ -43,7 +43,7 @@ jobs:
       - name: 🧪 test ubuntu self
         uses: csplink/action_setup_csp@test
         with:
-          version: v0.1.0
+          version: v0.1.1
 
   test-windows:
     name: 🧪 test windows

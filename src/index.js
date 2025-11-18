@@ -103,18 +103,19 @@ async function main() {
   try {
     const platform = getPlatform()
     const tag = await getTag()
-    const fileName = platform === 'windows' ? `csp-windows-server-${tag}.exe` : `csp-linux-server-${tag}`
-    const targetName = platform === 'windows' ? 'csp-server.exe' : 'csp-server'
+    const fileName = platform === 'windows' ? `csp-windows-server-${tag}.zip` : `csp-linux-server-${tag}.tar.gz`
 
     const url = `https://github.com/csplink/csp/releases/download/${tag}/${fileName}`
-    const downloadedPath = await tc.downloadTool(url)
-    const folder = path.dirname(downloadedPath)
-    const targetPath = path.join(folder, targetName)
-    fs.renameSync(downloadedPath, targetPath)
-
-    if (platform !== 'windows') {
-      fs.chmodSync(targetPath, 0o755)
+    const file = await tc.downloadTool(url)
+    let folder = ''
+    if (platform === 'windows') {
+      folder = await tc.extractZip(file)
     }
+    else {
+      folder = await tc.extractTar(file)
+    }
+    const dirs = fs.readdirSync(folder)
+    folder = path.join(folder, dirs[0])
 
     await exec(`${folder}/csp-server`, ['--version'])
     core.addPath(folder)
